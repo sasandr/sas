@@ -1,0 +1,17 @@
+filename dirlist pipe "ls -lt &dir/data/";
+
+data _dirlist;
+  length filename $200;
+  infile dirlist length=reclen firstobs=2;
+  input rwx     $ 
+        _link 
+        owner   $ 
+        group   $ 
+        size
+        month   $ 
+        day     z2. 
+        tmoryr  $ 
+        filename $;
+        
+   if substr(rwx,1,1)='d'; *** Only output directory information;
+run;
