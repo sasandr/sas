@@ -1,3 +1,45 @@
+%macro chkdate(crfdt=);
+
+    length dd $2 mmm $3 yy $4;
+    
+    call missing(dd, mmm, yy);
+    
+    if (count(&crfdt, '/')=1) and
+       (prxmatch("/\w{3}\/\d{4}/", &crfdt) or prxmatch("/000\/\d{4}/", &crfdt) or prxmatch("/\w{2}\/\d{4}/", &crfdt)) then do;
+        dd='00';
+        mmm=upcase(scan(&crfdt, 1, '/'));
+        yy=scan(&crfdt, 2, '/');
+    end;
+
+    else if (count(&crfdt, '/')=1) and
+            index(strip(&crfdt), '/')=1 then do;
+        dd='00';
+        mmm='000';
+        yy=scan(&crfdt, 1, '/');
+    end;
+    
+    else if index(strip(&crfdt), '/')=1 and count(&crfdt, '/')=2 and substr(strip(&crfdt), 2,1)^='/' then do;
+        dd='00';
+        mmm=upcase(scan(&crfdt, 1, '/'));
+        yy=scan(&crfdt, 2, '/');
+    end;
+
+    else if index(strip(&crfdt), '/')=1 and count(&crfdt, '/')=2 and substr(strip(&crfdt), 2,1)='/' then do;
+        dd='00';
+        mmm='000';
+        yy=scan(&crfdt, 1, '/');
+    end;
+    
+    else do;
+        dd=scan(&crfdt, 1, '/');
+        mmm=upcase(scan(&crfdt, 2, '/'));
+        yy=scan(&crfdt, 3, '/');
+    end;
+
+    if (^missing(mmm) and mmm not in ('JAN' 'FEB' 'MAR' 'APR' 'MAY' 'JUN' 'JUL' 'AUG' 'SEP' 'OCT' 'NOV' 'DEC' '000' 'OOO'))
+        then flag=1;
+
+%mend chkdate;
 
 data datlist;
   set sashelp.vcolumn;
@@ -9,20 +51,22 @@ data datlist;
   keep memname varnum name label;
 run;
 
-data datlist2;
-  set datlist;
-  by  memname;
-
-  retain list;
-  length list $ 400;
+title "Invalid CRF date";
+data _null_;
+  set datlist end=eof;
   
-  if  first.memname then list=' ';
-  list = catx(' ', list, name);
-
-  if  last.memname;
+  length source $ 50;
+  source=catx('.', 'rawdata', memname);
+   
+    call execute ("data _"||strip(memname)||';');
+    call execute ("  set "||source||';');
+    call execute ('  %chkdate(crfdt='||strip(name)||');');
+    call execute ('  if flag=1 then output;');
+    call execute ('run;');
+    
+    call execute ("proc print;");
+    call execute ("  var dfplate id "|| name ||";"); 
   
-  keep memname list;
+  if eof then call execute ("run; ");
   
 run;
-
-proc print; run;
