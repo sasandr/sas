@@ -1,6 +1,6 @@
 %macro chkdate(crfdt=);
 
-    length dd $2 mmm $3 yy $4;
+    length dd $2 mmm $3 yy $4 tempdat $ 9;
     
     call missing(dd, mmm, yy);
     
@@ -35,9 +35,15 @@
         mmm=upcase(scan(&crfdt, 2, '/'));
         yy=scan(&crfdt, 3, '/');
     end;
+    
+    tempdat = cats(dd,mmm,yy);
 
-    if (^missing(mmm) and mmm not in ('JAN' 'FEB' 'MAR' 'APR' 'MAY' 'JUN' 'JUL' 'AUG' 'SEP' 'OCT' 'NOV' 'DEC' '000' 'OOO'))
+    if (^missing(mmm) and mmm not in ('JAN' 'FEB' 'MAR' 'APR' 'MAY' 'JUN' 'JUL' 'AUG' 'SEP' 'OCT' 'NOV' 'DEC' '000' 'OOO' 'UNK'))
         then flag=1;
+        
+    else if dd>'00' and 
+            (mmm>'000') and 
+            yy>'0000' and input(tempdat, ?? date9.)<=.z then flag=1;
 
 %mend chkdate;
 
