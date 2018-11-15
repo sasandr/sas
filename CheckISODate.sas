@@ -18,6 +18,8 @@
     re = prxparse(isoregex); 
     if ^prxmatch(re, compress(&isodate.)) then
     	put "WARNING: Invalid SDTM ISO8601 DATE FOUND: " &isodate.= " in dataset &indsn.";
+    else if length(&isodate)=10 and missing(input(&isodate, ?? yymmdd10.)) then 
+      put "WARNING: Invalid SDTM ISO8601 DATE FOUND: " &isodate.= " in dataset &indsn.";
   run;
 %mend CheckISODate;
 
