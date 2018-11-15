@@ -20,3 +20,17 @@
     	put "WARNING: Invalid SDTM ISO8601 DATE FOUND: " &isodate.= " in dataset &indsn.";
   run;
 %mend CheckISODate;
+
+data dsnlist;
+  set sashelp.vcolumn;
+  where upcase(libname)='TABDATA' and memtype='DATA' and length(memname)=2;
+  
+  if prxmatch('/DTC$/', strip(name));
+  
+  keep memname name;
+run;
+
+data _null_;
+  set dsnlist;
+  call execute('%nrstr(%checkisodate(indsn=tabdata.' || strip(memname) ||', isodate='||strip(name)||'));');
+run;
